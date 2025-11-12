@@ -27,6 +27,14 @@
     .qty,input[type="number"] { width: 80px; padding: 6px; border-radius: 8px; border: 1px solid #ddd; }
     label { display: block; font-size: 14px; margin-bottom: 6px; color: #222; }
     select, input[type="text"], textarea { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
+    .after-school-col {
+      flex: 0 0 220px;
+      min-width: 150px;
+      max-width: 260px;
+      display: none;
+      margin-left: 2px;
+    }
+    #after-school-where { width: 100%; min-width: 0; }
     .row { display: flex; gap: 12px; }
     .row .col { flex: 1; }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
@@ -38,9 +46,22 @@
     @media(max-width:720px){
       .menu-grid{grid-template-columns:1fr;}
       .row{flex-direction:column;}
+      .after-school-col { max-width:100%; min-width:0; flex:1 1 100%; margin-left:0; margin-top:8px;}
     }
     .badge{display:inline-block;padding:6px 8px;border-radius:20px;background:#f8fafc;border:1px solid #eee;font-size:13px;}
     .note{background:#fff8e6;color:#7c4a00;padding:8px;border-radius:8px;font-size:13px;}
+    .modal-overlay {
+      position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.2); z-index: 9999; display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+      background: #fff; padding: 24px 16px 16px; border-radius: 11px;
+      min-width: 270px; box-shadow: 0 6px 20px rgba(30,39,70,0.08);
+      text-align: center;
+    }
+    .modal h3 { margin: 0 0 12px 0; font-size: 17px; }
+    .modal .btn { margin-bottom: 7px; width: 90%; font-size: 16px;}
+    .modal .btn + .btn { margin-left: 0; }
   </style>
 </head>
 <body>
@@ -104,7 +125,7 @@
   <input id="name" type="text" placeholder="Your name" required />
 </div>
 <div style="margin-top:8px;">
-  <label for="contact" id="label-contact">Contact (phone or email)</label>
+  <label for="contact" id="label-contact">Phone number</label>
   <input id="contact" type="text" placeholder="e.g. +1 (xxx) xxx-xxxx" required />
 </div>
 <div style="margin-top:8px;">
@@ -119,13 +140,18 @@
         <option value="After 4th period">After 4th period</option>
         <option value="After 5th period">After 5th period</option>
         <option value="After 6th period">After 6th period</option>
-        <option value="After 7th period">After 7th period</option>
         <option value="After school">After school</option>
       </select>
+    </div>
+    <div class="after-school-col" id="after-school-where-box">
+      <input id="after-school-where" type="text" style="max-width:200px;" placeholder="Where after school?" />
     </div>
     <div class="col">
       <input id="custom-period" type="text" placeholder="Or write your custom time / place" />
     </div>
+  </div>
+  <div class="small" id="after-school-note" style="display:none;">
+    <span id="after-school-note-text">Ex: front office exit, bus exit, or parking lot exit</span>
   </div>
 </div>
 <div style="margin-top:8px;">
@@ -157,7 +183,17 @@
 <footer class="small" id="footer-text">
 More delicious sweets on the way!
 </footer>
-<!-- Zelle info popup, initially hidden -->
+
+<!-- ORDER SEND OPTIONS MODAL -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal">
+    <h3>Choose how to send your order</h3>
+    <button class="btn" id="send-whatsapp">Send with WhatsApp</button>
+    <button class="btn" id="send-insta">Send with Instagram DM</button><br/>
+    <button class="btn secondary" id="cancel-modal" style="margin-top:5px;">Cancel</button>
+  </div>
+</div>
+
 <div id="zelle-popup" style="display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.24);z-index:1000;">
   <div style="background:#fff;padding:24px;max-width:330px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.07);margin:80px auto;position:relative;">
     <span id="zelle-popup-message" style="font-size:16px;display:block;margin-bottom:6px"></span>
@@ -168,10 +204,7 @@ More delicious sweets on the way!
 <script>
 const ZELLE_SEND_INFO = "484-509-3148";
 const WHATSAPP_PRIMARY = "+14845093148";
-const WHATSAPP_SECONDARY = "+5521967180022";
 const INSTAGRAM_USERNAME = "bakes.br";
-const EMAIL_RECIPIENTS = ["esousa075@riointernationalschool.com","enzobrasil19@gmail.com"];
-const GOOGLE_SHEETS_WEBHOOK_URL = "YOUR_WEBHOOK_URL_HERE";
 const LANG = {
   en: {
     siteTitle: "BakeBR",
@@ -196,13 +229,21 @@ const LANG = {
     cookiesQtyLabel: "Quantity",
     orderInfoTitle: "Order Info",
     nameLabel: "Full name",
-    contactLabel: "Contact (phone or email)",
+    contactLabel: "Phone number",
     periodLabel: "School Period Meet",
     periodOptions: [
-      "Before 1st period", "After 1st period", "After 2nd period", "After 3rd period", "After 4th period",
-      "After 5th period", "After 6th period", "After 7th period", "After school"
+      "Before 1st period",
+      "After 1st period",
+      "After 2nd period",
+      "After 3rd period",
+      "After 4th period",
+      "After 5th period",
+      "After 6th period",
+      "After school"
     ],
     customPeriod: "Or write your custom time / place",
+    afterSchoolWherePH: "Where after school?",
+    afterSchoolNote: "Ex: front office exit, bus exit, or parking lot exit",
     paymentLabel: "Payment method",
     payCash: "Cash",
     payZelle: "Zelle",
@@ -216,7 +257,8 @@ const LANG = {
     footer: "More delicious sweets on the way!",
     zellePopup: "If you're paying by Zelle, please send your total to:",
     zelleMessage: "After you send your order, our Zelle payment info will appear for you to make your payment.",
-    zellePopupBtn: "OK"
+    zellePopupBtn: "OK",
+    afterSchoolRequired: "Where after school?"
   },
   pt: {
     siteTitle: "BakeBR",
@@ -241,13 +283,21 @@ const LANG = {
     cookiesQtyLabel: "Quantidade",
     orderInfoTitle: "Pedido",
     nameLabel: "Nome completo",
-    contactLabel: "Contato (telefone ou email)",
+    contactLabel: "Telefone",
     periodLabel: "Período escolar para entrega",
     periodOptions: [
-      "Antes do 1º período", "Após 1º período", "Após 2º período", "Após 3º período", "Após 4º período",
-      "Após 5º período", "Após 6º período", "Após 7º período", "Após a escola"
+      "Antes do 1º período",
+      "Após 1º período",
+      "Após 2º período",
+      "Após 3º período",
+      "Após 4º período",
+      "Após 5º período",
+      "Após 6º período",
+      "Após a escola"
     ],
     customPeriod: "Ou escreva seu horário/local personalizado",
+    afterSchoolWherePH: "Onde após a escola?",
+    afterSchoolNote: "Ex: entrada principal, saída do ônibus, ou estacionamento",
     paymentLabel: "Forma de pagamento",
     payCash: "Dinheiro",
     payZelle: "Zelle",
@@ -261,7 +311,8 @@ const LANG = {
     footer: "Novidades doces ainda estão por vir!",
     zellePopup: "Se estiver pagando com Zelle, envie para:",
     zelleMessage: "Depois de finalizar seu pedido, aparecerá a informação para pagamento via Zelle.",
-    zellePopupBtn: "OK"
+    zellePopupBtn: "OK",
+    afterSchoolRequired: "Onde após a escola?"
   },
   es: {
     siteTitle: "BakeBR",
@@ -286,13 +337,21 @@ const LANG = {
     cookiesQtyLabel: "Cantidad",
     orderInfoTitle: "Datos del pedido",
     nameLabel: "Nombre completo",
-    contactLabel: "Contacto (teléfono o email)",
+    contactLabel: "Teléfono",
     periodLabel: "Horario de entrega escolar",
     periodOptions: [
-      "Antes del 1° periodo", "Después del 1° periodo", "Después del 2° periodo", "Después del 3° periodo", "Después del 4° periodo",
-      "Después del 5° periodo", "Después del 6° periodo", "Después del 7° periodo", "Después de clases"
+      "Antes del 1° periodo",
+      "Después del 1° periodo",
+      "Después del 2° periodo",
+      "Después del 3° periodo",
+      "Después del 4° periodo",
+      "Después del 5° periodo",
+      "Después del 6° periodo",
+      "Después de clases"
     ],
     customPeriod: "O indica tu horario/lugar preferido",
+    afterSchoolWherePH: "¿Dónde después de clases?",
+    afterSchoolNote: "Ej: puerta principal, salida del bus o del parking",
     paymentLabel: "Forma de pago",
     payCash: "Efectivo",
     payZelle: "Zelle",
@@ -306,10 +365,10 @@ const LANG = {
     footer: "Prepárate, pronto habrá más dulces y postres!",
     zellePopup: "Si pagas por Zelle, envía el pago a:",
     zelleMessage: "Al enviar tu pedido verás el dato para el pago por Zelle.",
-    zellePopupBtn: "OK"
+    zellePopupBtn: "OK",
+    afterSchoolRequired: "¿Dónde después de clases?"
   }
 };
-
 function setLang(lang) {
   const L = LANG[lang] || LANG['en'];
   document.getElementById('site-title').textContent = L.siteTitle;
@@ -337,7 +396,7 @@ function setLang(lang) {
   document.getElementById('cinnamon-prices').innerHTML = L.cinnamonPrice.map(x => `<div>${x}</div>`).join("");
   document.getElementById('cookies-prices').innerHTML = L.cookiesPrice.map(x => `<div>${x}</div>`).join("");
 
-  // School period options
+  // Update period options and placeholders in right language
   const periodSel = document.getElementById('period');
   const oldVal = periodSel.value;
   periodSel.innerHTML = L.periodOptions.map(opt =>
@@ -345,17 +404,20 @@ function setLang(lang) {
   ).join("");
   if (L.periodOptions.includes(oldVal)) periodSel.value = oldVal;
   document.getElementById('custom-period').placeholder = L.customPeriod;
+  document.getElementById('after-school-where').placeholder = L.afterSchoolWherePH;
+  document.getElementById('after-school-note-text').textContent = L.afterSchoolNote;
 
   document.getElementById('zelle-message-text').textContent = '';
   if (document.querySelector('input[name="payment"]:checked').value === 'Zelle') {
     document.getElementById('zelle-message-text').textContent = L.zelleMessage;
     document.getElementById('zelle-message-text').style.display = 'block';
   }
+  showAfterSchoolWhereBox(); // make sure visibility/placeholder in sync
 }
 document.getElementById('lang').addEventListener('change', function () {
   setLang(this.value);
 });
-window.addEventListener('DOMContentLoaded', ()=>{ setLang(document.getElementById('lang').value); });
+window.addEventListener('DOMContentLoaded', ()=>{ setLang(document.getElementById('lang').value); showAfterSchoolWhereBox(); });
 
 document.querySelectorAll('input[name="payment"]').forEach(el=>{
   el.addEventListener('change', (e)=>{
@@ -368,6 +430,26 @@ document.querySelectorAll('input[name="payment"]').forEach(el=>{
   });
 });
 
+// Show/hide After School meeting spot box, set placeholder & note per language
+function showAfterSchoolWhereBox() {
+  var periodSel = document.getElementById('period');
+  var afterSchoolBox = document.getElementById('after-school-where-box');
+  var afterSchoolInput = document.getElementById('after-school-where');
+  var afterSchoolNote = document.getElementById('after-school-note');
+  var langKey = document.getElementById("lang").value;
+  if (periodSel.value === (LANG[langKey].periodOptions[LANG[langKey].periodOptions.length-1])) {
+    afterSchoolBox.style.display = "";
+    afterSchoolNote.style.display = "";
+    afterSchoolInput.required = true;
+  } else {
+    afterSchoolBox.style.display = "none";
+    afterSchoolNote.style.display = "none";
+    afterSchoolInput.required = false;
+    afterSchoolInput.value = "";
+  }
+}
+document.getElementById('period').addEventListener('change', showAfterSchoolWhereBox);
+
 function computeTotal(){
   const cQty = Number(document.getElementById('cinnamon-qty').value || 0);
   const coQty = Number(document.getElementById('cookies-qty').value || 0);
@@ -379,13 +461,48 @@ function computeTotal(){
   return { total: cTotal + coTotal, breakdown: { cTotal, coTotal } };
 }
 
-// Form validation: require all fields except custom period and notes
-document.getElementById('place-order').addEventListener('click', async ()=>{
+function buildOrderMessage() {
   const langKey = document.getElementById("lang").value;
   const L = LANG[langKey];
   const name = document.getElementById('name').value.trim();
   const contact = document.getElementById('contact').value.trim();
   const period = document.getElementById('period').value;
+  let afterSchoolWhere = '';
+  if (period === L.periodOptions[L.periodOptions.length-1]) {
+    afterSchoolWhere = document.getElementById('after-school-where').value.trim();
+  }
+  const payment = document.querySelector('input[name="payment"]:checked').value;
+  const timing = document.querySelector('input[name="timing"]:checked').value;
+  const cQty = Number(document.getElementById('cinnamon-qty').value || 0);
+  const coQty = Number(document.getElementById('cookies-qty').value || 0);
+  const custom = document.getElementById('custom-period').value || "";
+  const notes = document.getElementById('notes').value || "";
+
+  let msgLines = [
+    `*New Order*`,
+    `Name: ${name}`,
+    contact ? `Phone: ${contact}` : "",
+    `Period: ${period}${afterSchoolWhere ? ' ('+afterSchoolWhere+')' : ''}${custom ? (" — " + custom) : ""}`,
+    `Items:`,
+    cQty ? `• ${L.cinnamon} x ${cQty}` : "",
+    coQty ? `• ${L.cookies} x ${coQty}` : "",
+    `Payment: ${payment} (${timing})`,
+    notes ? `Notes: ${notes}` : "",
+    `Total: $${computeTotal().total.toFixed(2)}`
+  ].filter(Boolean);
+  return msgLines.join("\n");
+}
+
+document.getElementById('place-order').addEventListener('click', ()=>{
+  const langKey = document.getElementById("lang").value;
+  const L = LANG[langKey];
+  const name = document.getElementById('name').value.trim();
+  const contact = document.getElementById('contact').value.trim();
+  const period = document.getElementById('period').value;
+  let afterSchoolWhere = '';
+  if (period === L.periodOptions[L.periodOptions.length-1]) {
+    afterSchoolWhere = document.getElementById('after-school-where').value.trim();
+  }
   const payment = document.querySelector('input[name="payment"]:checked').value;
   const timing = document.querySelector('input[name="timing"]:checked').value;
   const cQty = Number(document.getElementById('cinnamon-qty').value || 0);
@@ -395,6 +512,7 @@ document.getElementById('place-order').addEventListener('click', async ()=>{
   if(!name) missing.push(L.nameLabel);
   if(!contact) missing.push(L.contactLabel);
   if(!period) missing.push(L.periodLabel);
+  if(period === L.periodOptions[L.periodOptions.length-1] && !afterSchoolWhere) missing.push(L.afterSchoolRequired);
   if(!payment) missing.push(L.paymentLabel);
   if(!timing) missing.push(L.paymentTimingLabel);
   if(cQty + coQty === 0) missing.push(L.cinnamon + " / " + L.cookies + " Qty");
@@ -404,47 +522,38 @@ document.getElementById('place-order').addEventListener('click', async ()=>{
     return;
   }
 
-  const custom = document.getElementById('custom-period').value || "";
-  const notes = document.getElementById('notes').value || "";
+  document.getElementById('order-modal').style.display = 'flex';
+});
 
-  let msgLines=[
-    `*New Order*`,
-    `Name: ${name}`,
-    contact?`Contact: ${contact}`:"",
-    `Period: ${period}${custom?(" — "+custom):""}`,
-    `Items:`,
-    cQty?`• ${L.cinnamon} x ${cQty}`:"",
-    coQty?`• ${L.cookies} x ${coQty}`:"",
-    `Payment: ${payment} (${timing})`,
-    notes?`Notes: ${notes}`:"",
-    `Total: $${computeTotal().total.toFixed(2)}`
-  ].filter(Boolean);
+document.getElementById('cancel-modal').onclick = function() {
+  document.getElementById('order-modal').style.display = 'none';
+};
 
-  const encoded = encodeURIComponent(msgLines.join("\n"));
+document.getElementById('send-whatsapp').onclick = function() {
+  const msg = encodeURIComponent(buildOrderMessage());
+  const url = `https://wa.me/${WHATSAPP_PRIMARY.replace(/[^0-9]/g,'')}?text=${msg}`;
+  window.open(url, '_blank');
+  document.getElementById('order-modal').style.display = 'none';
+  afterSend();
+};
 
-  window.open(`https://wa.me/${WHATSAPP_PRIMARY.replace(/[^0-9]/g,'')}?text=${encoded}`,'_blank');
-  window.open(`https://wa.me/${WHATSAPP_SECONDARY.replace(/[^0-9]/g,'')}?text=${encoded}`,'_blank');
+document.getElementById('send-insta').onclick = function() {
   window.open(`https://instagram.com/${INSTAGRAM_USERNAME}`,'_blank');
-  window.location.href = `mailto:${EMAIL_RECIPIENTS.join(',')}?subject=Order from ${encodeURIComponent(name)}&body=${encoded}`;
+  document.getElementById('order-modal').style.display = 'none';
+  afterSend();
+};
 
-  if(GOOGLE_SHEETS_WEBHOOK_URL !=="YOUR_WEBHOOK_URL_HERE"){
-    try{
-      await fetch(GOOGLE_SHEETS_WEBHOOK_URL,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name,contact,period,custom,payment,timing,cQty,coQty,notes,total:computeTotal().total})
-      });
-    }catch(e){console.warn("Webhook failed",e);}
-  }
-
-  // Show Zelle info if chosen
+function afterSend() {
+  const payment = document.querySelector('input[name="payment"]:checked').value;
+  const langKey = document.getElementById("lang").value;
+  const L = LANG[langKey];
   if(payment === "Zelle"){
     document.getElementById('zelle-popup-message').textContent = L.zellePopup + ' ' + ZELLE_SEND_INFO;
     document.getElementById('zelle-popup').style.display = 'block';
   } else {
-    alert("Order placed! WhatsApp, email, and Instagram opened.");
+    alert("Order placed! Thank you.");
   }
-});
+}
 </script>
 </body>
 </html>
