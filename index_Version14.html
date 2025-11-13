@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BakeBR</title>
+  <style>
+    :root {
+      --accent: #d97706;
+      --bg: #fff;
+      --muted: #666;
+      --card: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    body { margin: 0; background: var(--bg); color: #111; line-height: 1.3; }
+    .container { max-width: 980px; margin: 24px auto; padding: 16px; }
+    header { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .brand { display: flex; gap: 12px; align-items: center; }
+    h1 { margin: 0; font-size: 20px; }
+    p.lead { margin: 0; color: var(--muted); font-size: 14px; }
+    .card { background: var(--card); border-radius: 14px; padding: 16px; box-shadow: 0 6px 18px rgba(16,24,40,0.06); margin-top: 16px; }
+    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .item { border-radius: 12px; padding: 10px; border: 1px solid #eee; }
+    .item h3 { margin: 0 0 6px 0; font-size: 16px; }
+    .price-lines { font-size: 14px; color: var(--muted); }
+    .controls { margin-top: 12px; display: flex; gap: 8px; align-items: center; }
+    .qty,input[type="number"] { width: 80px; padding: 6px; border-radius: 8px; border: 1px solid #ddd; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; color: #222; }
+    select, input[type="text"], textarea { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; }
+    .row { display: flex; gap: 12px; }
+    .row .col { flex: 1; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .btn { background: var(--accent); color: #fff; padding: 10px 12px; border-radius: 10px; border: 0; cursor: pointer; }
+    .btn.secondary { background: #f3f4f6; color: #111; }
+    .small { font-size: 13px; color: var(--muted); }
+    footer { margin-top: 20px; text-align: center; color: var(--muted); font-size: 13px; }
+    .lang-select { display: flex; align-items: center; gap: 6px; }
+    .warning-zelle-in-person {
+      color: #b45309;
+      background: #fffbe7;
+      border: 1px solid #fed7aa;
+      border-radius: 7px;
+      padding: 9px 13px;
+      margin: 8px 0 0 0;
+      font-size: 14px;
+      display: none;
+    }
+    @media(max-width:720px){
+      .menu-grid{grid-template-columns:1fr;}
+      .row{flex-direction:column;}
+    }
+    .badge {display:inline-block;padding:6px 8px;border-radius:20px;background:#f8fafc;border:1px solid #eee;font-size:13px;}
+    .note {background:#fff8e6;color:#7c4a00;padding:8px;border-radius:8px;font-size:13px;}
+    .modal-overlay {
+      position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.2); z-index: 9999; display: none; align-items: center; justify-content: center;
+    }
+    .modal {
+      background: #fff; padding: 24px 16px 16px; border-radius: 11px;
+      min-width: 270px; box-shadow: 0 6px 20px rgba(30,39,70,0.08);
+      text-align: center;
+    }
+    .modal h3 { margin: 0 0 12px 0; font-size: 17px; }
+    .modal .btn { margin-bottom: 7px; width: 90%; font-size: 16px;}
+    .modal .btn + .btn { margin-left: 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="brand">
+    <div>
+      <h1 id="site-title">BakeBR</h1>
+      <p class="lead" id="site-sub">Fresh cinnamon rolls & cookies made to order.</p>
+      <div class="small" id="site-under-text" style="margin-top:2px;color:#ba8c47;"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div class="lang-select card" style="padding:8px;">
+      <select id="lang" aria-label="Language selector">
+        <option value="en">🇺🇸 English</option>
+        <option value="pt">🇧🇷 Português</option>
+        <option value="es">🇪🇸 Español</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="card" id="menu-section">
+<h2 id="menu-title">Menu</h2>
+<div class="menu-grid">
+  <div class="item">
+    <h3 id="cinnamon-title">Cinnamon Roll</h3>
+    <div class="price-lines" id="cinnamon-prices">
+      <div>1 unit — $4.00</div>
+      <div>2 units — $7.00</div>
+      <div>3 units — $10.00</div>
+      <div>4 units — $13.00</div>
+    </div>
+    <div class="controls" style="margin-top:10px">
+      <label for="cinnamon-qty" class="small" id="cinnamon-qty-label">Quantity</label>
+      <input id="cinnamon-qty" type="number" min="0" value="0" />
+    </div>
+  </div>
+  <div class="item">
+    <h3 id="cookies-title">Cookies</h3>
+    <div class="price-lines" id="cookies-prices">
+      <div>1 unit — $2.00</div>
+      <div>2 units — $4.00</div>
+      <div>3 units — $6.00</div>
+      <div>6 units — $12.00</div>
+    </div>
+    <div class="controls" style="margin-top:10px">
+      <label for="cookies-qty" class="small" id="cookies-qty-label">Quantity</label>
+      <input id="cookies-qty" type="number" min="0" value="0" />
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="card" style="margin-top:12px;">
+<h3 id="order-info-title">Order Info</h3>
+<div style="margin-top:8px;">
+  <label for="name" id="label-name">Full name</label>
+  <input id="name" type="text" placeholder="Your name" required />
+</div>
+<div style="margin-top:8px;">
+  <label for="contact" id="label-contact">Phone number / email</label>
+  <input id="contact" type="text" placeholder="e.g. +1 (xxx) xxx-xxxx or email" required />
+</div>
+<div style="margin-top:8px;">
+  <label for="period" id="label-period">School Period Meet</label>
+  <div class="row">
+    <div class="col">
+      <select id="period">
+        <option value="Before 1st period">Before 1st period</option>
+        <option value="After 1st period">After 1st period</option>
+        <option value="After 2nd period">After 2nd period</option>
+        <option value="After 3rd period">After 3rd period</option>
+        <option value="After 4th period">After 4th period</option>
+        <option value="After 5th period">After 5th period</option>
+        <option value="After 6th period">After 6th period</option>
+        <option value="After school">After school</option>
+      </select>
+    </div>
+    <div class="col">
+      <input id="custom-period" type="text" placeholder="Or write your custom time / place" />
+    </div>
+  </div>
+</div>
+<div style="margin-top:8px;">
+  <label id="label-payment">Payment method</label>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <label><input type="radio" name="payment" value="Cash" checked /> <span id="pay-cash">Cash</span></label>
+    <label><input type="radio" name="payment" value="Zelle" /> <span id="pay-zelle">Zelle</span></label>
+    <div id="zelle-message-text" style="display:none;margin-left:12px;font-size:13px;color:#7c4a00;"></div>
+  </div>
+</div>
+<div style="margin-top:8px;">
+  <label id="label-timing">Payment timing</label>
+  <div style="display:flex;gap:10px;align-items:center">
+    <label><input type="radio" name="timing" value="In person" checked /> <span id="timing-person">In person</span></label>
+    <label><input type="radio" name="timing" value="After ordering" /> <span id="timing-after">Right after placing order</span></label>
+  </div>
+</div>
+<div id="zelle-inperson-warning" class="warning-zelle-in-person">
+  If you selected Zelle and "In person", Zelle payment instructions will be given in person.
+</div>
+<div style="margin-top:12px;">
+  <label for="notes" id="label-notes">Notes (allergies, flavors, special requests)</label>
+  <textarea id="notes" rows="3" placeholder="Any notes..."></textarea>
+</div>
+<div class="actions">
+  <button class="btn" id="place-order">Place Order</button>
+</div>
+<div style="margin-top:12px" class="note" id="instagram-note">
+  Instagram: We'll open your Instagram DM page — please take a screenshot of your order and send it to us.
+</div>
+</section>
+<footer class="small" id="footer-text">
+More delicious sweets on the way!
+</footer>
+
+<!-- ORDER SEND OPTIONS MODAL -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal">
+    <h3>Choose how to send your order</h3>
+    <button class="btn" id="send-whatsapp">Send with WhatsApp</button>
+    <button class="btn" id="send-insta">Send with Instagram DM</button><br/>
+    <button class="btn secondary" id="cancel-modal" style="margin-top:5px;">Cancel</button>
+  </div>
+</div>
+
+<div id="zelle-popup" style="display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.24);z-index:1000;">
+  <div style="background:#fff;padding:24px;max-width:330px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.07);margin:80px auto;position:relative;">
+    <span id="zelle-popup-message" style="font-size:16px;display:block;margin-bottom:6px"></span>
+    <button onclick="document.getElementById('zelle-popup').style.display='none';" style="float:right;background:var(--accent);color:#fff;border-radius:8px;border:none;padding:7px 13px;cursor:pointer;">OK</button>
+  </div>
+</div>
+</div>
+<script>
+const ZELLE_SEND_INFO = "484-509-3148";
+const WHATSAPP_PRIMARY = "+14845093148";
+const INSTAGRAM_USERNAME = "bakes.br";
+const LANG = {
+  en: {
+    siteTitle: "BakeBR",
+    siteSub: "Fresh cinnamon rolls & cookies made to order.",
+    menuTitle: "Menu",
+    underText: "More delicious sweets on the way!",
+    cinnamon: "Cinnamon Roll",
+    cinnamonPrice: [
+      "1 unit — $4.00",
+      "2 units — $7.00",
+      "3 units — $10.00",
+      "4 units — $13.00"
+    ],
+    cinnamonQtyLabel: "Quantity",
+    cookies: "Cookies",
+    cookiesPrice: [
+      "1 unit — $2.00",
+      "2 units — $4.00",
+      "3 units — $6.00",
+      "6 units — $12.00"
+    ],
+    cookiesQtyLabel: "Quantity",
+    orderInfoTitle: "Order Info",
+    nameLabel: "Full name",
+    contactLabel: "Phone number / email",
+    periodLabel: "School Period Meet",
+    periodOptions: [
+      "Before 1st period",
+      "After 1st period",
+      "After 2nd period",
+      "After 3rd period",
+      "After 4th period",
+      "After 5th period",
+      "After 6th period",
+      "After school"
+    ],
+    customPeriod: "Or write your custom time / place",
+    paymentLabel: "Payment method",
+    payCash: "Cash",
+    payZelle: "Zelle",
+    paymentTimingLabel: "Payment timing",
+    timingPerson: "In person",
+    timingAfter: "Right after placing order",
+    notesLabel: "Notes (allergies, flavors, special requests)",
+    notesPH: "Any notes...",
+    placeOrder: "Place Order",
+    instagramNote: "Instagram: We'll open your Instagram DM page — please take a screenshot of your order and send it to us.",
+    footer: "More delicious sweets on the way!",
+    zellePopup: "If you're paying by Zelle, please send your total to:",
+    zelleMessage: "After you send your order, our Zelle payment info will appear for you to make your payment.",
+    zellePopupBtn: "OK"
+  },
+  pt: {
+    siteTitle: "BakeBR",
+    siteSub: "Cinnamon rolls e cookies frescos feitos sob encomenda.",
+    menuTitle: "Menu",
+    underText: "Novidades doces ainda estão por vir!",
+    cinnamon: "Cinnamon Roll",
+    cinnamonPrice: [
+      "1 unidade — $4.00",
+      "2 unidades — $7.00",
+      "3 unidades — $10.00",
+      "4 unidades — $13.00"
+    ],
+    cinnamonQtyLabel: "Quantidade",
+    cookies: "Cookies",
+    cookiesPrice: [
+      "1 unidade — $2.00",
+      "2 unidades — $4.00",
+      "3 unidades — $6.00",
+      "6 unidades — $12.00"
+    ],
+    cookiesQtyLabel: "Quantidade",
+    orderInfoTitle: "Pedido",
+    nameLabel: "Nome completo",
+    contactLabel: "Telefone / email",
+    periodLabel: "Período escolar para entrega",
+    periodOptions: [
+      "Antes do 1º período",
+      "Após 1º período",
+      "Após 2º período",
+      "Após 3º período",
+      "Após 4º período",
+      "Após 5º período",
+      "Após 6º período",
+      "Após a escola"
+    ],
+    customPeriod: "Ou escreva seu horário/local personalizado",
+    paymentLabel: "Forma de pagamento",
+    payCash: "Dinheiro",
+    payZelle: "Zelle",
+    paymentTimingLabel: "Momento do pagamento",
+    timingPerson: "Na entrega",
+    timingAfter: "Logo após fazer o pedido",
+    notesLabel: "Observações (alergias, sabores, pedidos especiais)",
+    notesPH: "Alguma observação...",
+    placeOrder: "Enviar pedido",
+    instagramNote: "Instagram: Abriremos sua página de DM — tire um print do pedido e nos envie.",
+    footer: "Novidades doces ainda estão por vir!",
+    zellePopup: "Se estiver pagando com Zelle, envie para:",
+    zelleMessage: "Depois de finalizar seu pedido, aparecerá a informação para pagamento via Zelle.",
+    zellePopupBtn: "OK"
+  },
+  es: {
+    siteTitle: "BakeBR",
+    siteSub: "Rollos de canela y cookies frescos, hechos para ti.",
+    menuTitle: "Menú",
+    underText: "Prepárate, pronto habrá más dulces y postres!",
+    cinnamon: "Roll de canela",
+    cinnamonPrice: [
+      "1 pieza — $4.00",
+      "2 piezas — $7.00",
+      "3 piezas — $10.00",
+      "4 piezas — $13.00"
+    ],
+    cinnamonQtyLabel: "Cantidad",
+    cookies: "Galletas",
+    cookiesPrice: [
+      "1 pieza — $2.00",
+      "2 piezas — $4.00",
+      "3 piezas — $6.00",
+      "6 piezas — $12.00"
+    ],
+    cookiesQtyLabel: "Cantidad",
+    orderInfoTitle: "Datos del pedido",
+    nameLabel: "Nombre completo",
+    contactLabel: "Teléfono / email",
+    periodLabel: "Horario de entrega escolar",
+    periodOptions: [
+      "Antes del 1° periodo",
+      "Después del 1° periodo",
+      "Después del 2° periodo",
+      "Después del 3° periodo",
+      "Después del 4° periodo",
+      "Después del 5° periodo",
+      "Después del 6° periodo",
+      "Después de clases"
+    ],
+    customPeriod: "O indica tu horario/lugar preferido",
+    paymentLabel: "Forma de pago",
+    payCash: "Efectivo",
+    payZelle: "Zelle",
+    paymentTimingLabel: "Cuándo pagar",
+    timingPerson: "En persona",
+    timingAfter: "Al terminar el pedido",
+    notesLabel: "Notas (alergias, preferencias, especiales)",
+    notesPH: "Escribe tus notas aquí...",
+    placeOrder: "Hacer pedido",
+    instagramNote: "Instagram: Abriremos tu DM, mándanos una foto de tu pedido.",
+    footer: "Prepárate, pronto habrá más dulces y postres!",
+    zellePopup: "Si pagas por Zelle, envía el pago a:",
+    zelleMessage: "Al enviar tu pedido verás el dato para el pago por Zelle.",
+    zellePopupBtn: "OK"
+  }
+};
+
+function setLang(lang) {
+  const L = LANG[lang] || LANG['en'];
+  document.getElementById('site-title').textContent = L.siteTitle;
+  document.getElementById('site-sub').textContent = L.siteSub;
+  document.getElementById('menu-title').textContent = L.menuTitle;
+  document.getElementById('order-info-title').textContent = L.orderInfoTitle;
+  document.getElementById('label-name').textContent = L.nameLabel;
+  document.getElementById('label-contact').textContent = L.contactLabel;
+  document.getElementById('label-period').textContent = L.periodLabel;
+  document.getElementById('cinnamon-qty-label').textContent = L.cinnamonQtyLabel;
+  document.getElementById('cookies-qty-label').textContent = L.cookiesQtyLabel;
+  document.getElementById('label-payment').textContent = L.paymentLabel;
+  document.getElementById('pay-cash').textContent = L.payCash;
+  document.getElementById('pay-zelle').textContent = L.payZelle;
+  document.getElementById('label-timing').textContent = L.paymentTimingLabel;
+  document.getElementById('timing-person').textContent = L.timingPerson;
+  document.getElementById('timing-after').textContent = L.timingAfter;
+  document.getElementById('label-notes').textContent = L.notesLabel;
+  document.getElementById('notes').placeholder = L.notesPH;
+  document.getElementById('place-order').textContent = L.placeOrder;
+  document.getElementById('instagram-note').textContent = L.instagramNote;
+  document.getElementById('footer-text').textContent = L.underText;
+  document.getElementById('zelle-popup-message').textContent = L.zellePopup + ' ' + ZELLE_SEND_INFO;
+  document.getElementById('site-under-text').textContent = L.underText;
+  document.getElementById('cinnamon-prices').innerHTML = L.cinnamonPrice.map(x => `<div>${x}</div>`).join("");
+  document.getElementById('cookies-prices').innerHTML = L.cookiesPrice.map(x => `<div>${x}</div>`).join("");
+  const periodSel = document.getElementById('period');
+  const oldVal = periodSel.value;
+  periodSel.innerHTML = L.periodOptions.map(opt =>
+    `<option value="${opt}">${opt}</option>`
+  ).join("");
+  if (L.periodOptions.includes(oldVal)) periodSel.value = oldVal;
+  document.getElementById('custom-period').placeholder = L.customPeriod;
+  showZelleInPersonWarning();
+}
+document.getElementById('lang').addEventListener('change', function () {
+  setLang(this.value);
+});
+window.addEventListener('DOMContentLoaded', ()=>{ setLang(document.getElementById('lang').value); });
+
+document.querySelectorAll('input[name="payment"]').forEach(el=>{
+  el.addEventListener('change', ()=>{
+    showZelleInPersonWarning();
+    if(document.querySelector('input[name="payment"]:checked').value === "Zelle") {
+      document.getElementById('zelle-message-text').textContent = LANG[document.getElementById("lang").value].zelleMessage;
+      document.getElementById('zelle-message-text').style.display = 'block';
+    } else {
+      document.getElementById('zelle-message-text').style.display = 'none';
+    }
+  });
+});
+document.querySelectorAll('input[name="timing"]').forEach(el=>{
+  el.addEventListener('change', ()=>showZelleInPersonWarning());
+});
+
+function showZelleInPersonWarning() {
+  var payment = document.querySelector('input[name="payment"]:checked').value;
+  var timing = document.querySelector('input[name="timing"]:checked').value;
+  var warnBox = document.getElementById('zelle-inperson-warning');
+  if(payment === "Zelle" && timing === "In person") {
+    warnBox.style.display = "block";
+  } else {
+    warnBox.style.display = "none";
+  }
+}
+
+function computeTotal(){
+  const cQty = Number(document.getElementById('cinnamon-qty').value || 0);
+  const coQty = Number(document.getElementById('cookies-qty').value || 0);
+  let cTotal = 0;
+  if (cQty === 1) cTotal = 4;
+  else if (cQty === 2) cTotal = 7;
+  else if (cQty > 2) cTotal = 7 + (cQty - 2) * 3;
+  let coTotal = coQty * 2;
+  return { total: cTotal + coTotal, breakdown: { cTotal, coTotal } };
+}
+
+function buildOrderMessage() {
+  const langKey = document.getElementById("lang").value;
+  const L = LANG[langKey];
+  const name = document.getElementById('name').value.trim();
+  const contact = document.getElementById('contact').value.trim();
+  const period = document.getElementById('period').value;
+  const payment = document.querySelector('input[name="payment"]:checked').value;
+  const timing = document.querySelector('input[name="timing"]:checked').value;
+  const cQty = Number(document.getElementById('cinnamon-qty').value || 0);
+  const coQty = Number(document.getElementById('cookies-qty').value || 0);
+  const custom = document.getElementById('custom-period').value || "";
+  const notes = document.getElementById('notes').value || "";
+
+  let msgLines = [
+    `*New Order*`,
+    `Name: ${name}`,
+    contact ? `Phone/email: ${contact}` : "",
+    `Period: ${period}${custom ? (" — " + custom) : ""}`,
+    `Items:`,
+    cQty ? `• ${L.cinnamon} x ${cQty}` : "",
+    coQty ? `• ${L.cookies} x ${coQty}` : "",
+    `Payment: ${payment} (${timing})`,
+    notes ? `Notes: ${notes}` : "",
+    `Total: $${computeTotal().total.toFixed(2)}`
+  ].filter(Boolean);
+  return msgLines.join("\n");
+}
+
+document.getElementById('place-order').addEventListener('click', ()=>{
+  const langKey = document.getElementById("lang").value;
+  const L = LANG[langKey];
+  const name = document.getElementById('name').value.trim();
+  const contact = document.getElementById('contact').value.trim();
+  const period = document.getElementById('period').value;
+  const payment = document.querySelector('input[name="payment"]:checked').value;
+  const timing = document.querySelector('input[name="timing"]:checked').value;
+  const cQty = Number(document.getElementById('cinnamon-qty').value || 0);
+  const coQty = Number(document.getElementById('cookies-qty').value || 0);
+
+  let missing = [];
+  if(!name) missing.push(L.nameLabel);
+  if(!contact) missing.push(L.contactLabel);
+  if(!period) missing.push(L.periodLabel);
+  if(!payment) missing.push(L.paymentLabel);
+  if(!timing) missing.push(L.paymentTimingLabel);
+  if(cQty + coQty === 0) missing.push(L.cinnamon + " / " + L.cookies + " Qty");
+
+  if(missing.length) {
+    alert("Please fill out the following fields:\n" + missing.join("\n"));
+    return;
+  }
+  document.getElementById('order-modal').style.display = 'flex';
+});
+
+document.getElementById('cancel-modal').onclick = function() {
+  document.getElementById('order-modal').style.display = 'none';
+};
+
+document.getElementById('send-whatsapp').onclick = function() {
+  const msg = encodeURIComponent(buildOrderMessage());
+  const url = `https://wa.me/${WHATSAPP_PRIMARY.replace(/[^0-9]/g,'')}?text=${msg}`;
+  window.open(url, '_blank');
+  document.getElementById('order-modal').style.display = 'none';
+  afterSend();
+};
+
+document.getElementById('send-insta').onclick = function() {
+  window.open(`https://instagram.com/${INSTAGRAM_USERNAME}`,'_blank');
+  document.getElementById('order-modal').style.display = 'none';
+  afterSend();
+};
+
+function afterSend() {
+  const payment = document.querySelector('input[name="payment"]:checked').value;
+  const timing = document.querySelector('input[name="timing"]:checked').value;
+  const langKey = document.getElementById("lang").value;
+  const L = LANG[langKey];
+  if(payment === "Zelle" && timing !== "In person") {
+    document.getElementById('zelle-popup-message').textContent = L.zellePopup + ' ' + ZELLE_SEND_INFO;
+    document.getElementById('zelle-popup').style.display = 'block';
+  } else if(payment === "Zelle" && timing === "In person") {
+    alert("Order placed! Thank you. Zelle payment instructions will be given in person.");
+  } else {
+    alert("Order placed! Thank you.");
+  }
+}
+</script>
+</body>
+</html>
